@@ -39,16 +39,15 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('newQuestion', question);
     });
 
-    // Other players respond
-    socket.on('submitResponse', (response) => {
-        socket.broadcast.to(players[currentAskerIndex].id).emit('newResponse', { response, player: socket.id });
+    // Other players respond with their name and response
+    socket.on('submitResponse', ({ response, playerName }) => {
+        socket.broadcast.to(players[currentAskerIndex].id).emit('newResponse', { response, playerName });
     });
 
-    // Asker chooses the best response
-    socket.on('awardPoints', (winnerId) => {
-        const winner = players.find((player) => player.id === winnerId);
-        if (winner) {
-            scores[winner.name]++;
+    // Asker awards points to a player
+    socket.on('awardPoints', (playerName) => {
+        if (scores[playerName] !== undefined) {
+            scores[playerName]++;
             io.emit('updateScores', scores);
         }
         nextTurn();
