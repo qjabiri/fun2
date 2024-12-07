@@ -2,6 +2,7 @@ const socket = io();
 
 const joinRoomDiv = document.getElementById('joinRoom');
 const gameRoomDiv = document.getElementById('gameRoom');
+const scoresSection = document.getElementById('scoresSection');
 const playerNameInput = document.getElementById('playerName');
 const joinBtn = document.getElementById('joinBtn');
 const playersList = document.getElementById('playersList');
@@ -42,6 +43,7 @@ socket.on('updatePlayers', (players) => {
 socket.on('gameStarted', ({ players, asker }) => {
     joinRoomDiv.style.display = 'none';
     gameRoomDiv.style.display = 'block';
+    scoresSection.style.display = 'block'; // Show the scores section
     updateAsker(asker);
 });
 
@@ -96,8 +98,7 @@ function awardPoint(response) {
 // Update scores
 socket.on('updateScores', (scores) => {
     scoresList.innerHTML = Object.entries(scores)
-        .map(([name, score]) => `<li>${name}: ${score}</li>`)
-        .join('');
+        .map(([name, score]) => `<li>${name}: ${score}</li>`).join('');
 });
 
 // Update the Asker
