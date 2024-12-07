@@ -9,6 +9,7 @@ const io = new Server(server);
 
 let players = [];
 let scores = {};
+let responses = []; // Store responses and the players who submitted them
 let currentAskerIndex = 0;
 let gameStarted = false;
 
@@ -36,18 +37,24 @@ io.on('connection', (socket) => {
 
     // Asker submits a question
     socket.on('submitQuestion', (question) => {
+        responses = []; // Clear previous responses for the new question
         io.emit('newQuestion', question); // Broadcast question to all players
     });
 
-    // Other players respond anonymously
+    // Other players respond (track which player submitted each response)
     socket.on('submitResponse', (response) => {
-        io.emit('newResponse', response); // Broadcast response anonymously
+        const player = players.find((player) => player.id === socket.id);
+        if (player) {
+            responses.push({ response, playerName: player.name });
+            io.emit('newResponse', response); // Broadcast response anonymously
+        }
     });
 
-    // Asker awards points and rotates to the next turn
-    socket.on('awardPoints', (playerName) => {
-        if (scores[playerName] !== undefined) {
-            scores[playerName]++;
+    // Asker awards points to the player who submitted the selected response
+    socket.on('awardPoints', (selectedResponse) => {
+        const responseEntry = responses.find((entry) => entry.response === selectedResponse);
+        if (responseEntry) {
+            scores[responseEntry.playerName]++;
             io.emit('updateScores', scores);
         }
         nextTurn();
