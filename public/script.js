@@ -51,6 +51,7 @@ submitQuestionBtn.addEventListener('click', () => {
     if (question) {
         socket.emit('submitQuestion', question);
         askerQuestionInput.value = '';
+        responsesList.innerHTML = ''; // Clear previous responses
     }
 });
 
