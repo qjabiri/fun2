@@ -87,10 +87,9 @@ socket.on('newResponse', (response) => {
 });
 
 // Award points
-function awardPoint(response) {
+function awardPoint(selectedResponse) {
     if (isAsker) {
-        // Emit an event to award points (server will handle point assignment and turn rotation)
-        socket.emit('awardPoints', response);
+        socket.emit('awardPoints', selectedResponse);
         responsesList.innerHTML = ''; // Clear responses after awarding
     }
 }
