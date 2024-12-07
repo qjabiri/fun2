@@ -73,17 +73,21 @@ socket.on('newQuestion', (question) => {
     currentAsker.innerText = `Asker's Question: ${question}`;
 });
 
-// Display anonymous responses
+// Display anonymous responses with award button
 socket.on('newResponse', (response) => {
     const responseElement = document.createElement('li');
-    responseElement.innerText = `Response: ${response}`;
+    responseElement.innerHTML = `
+        <strong>Response:</strong> ${response}
+        ${isAsker ? `<button onclick="awardPoint('${response}')">Select Best</button>` : ''}
+    `;
     responsesList.appendChild(responseElement);
 });
 
 // Award points
-function awardPoint(playerName) {
+function awardPoint(playerResponse) {
     if (isAsker) {
-        socket.emit('awardPoints', playerName);
+        // Emit an event to award points (server will rotate turns automatically)
+        socket.emit('awardPoints', playerResponse);
         responsesList.innerHTML = ''; // Clear responses after awarding
     }
 }
