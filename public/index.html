@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="joinRoom">
+        <input type="text" id="playerName" placeholder="Enter your name">
+        <button id="joinBtn">Join Room</button>
+        <ul id="playersList"></ul>
+        <button id="startGameBtn" disabled>Start Game</button>
+    </div>
+
+    <div id="gameRoom" style="display: none;">
+        <h2 id="currentAsker"></h2>
+        <div id="questionSection">
+            <input type="text" id="askerQuestion" placeholder="Type your question">
+            <button id="submitQuestionBtn">Submit Question</button>
+        </div>
+        <div id="responseSection">
+            <input type="text" id="playerResponse" placeholder="Type your response">
+            <button id="submitResponseBtn">Submit Response</button>
+        </div>
+        <ul id="responsesList"></ul>
+        <ul id="scoresList"></ul>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
