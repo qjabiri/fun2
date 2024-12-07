@@ -36,12 +36,12 @@ io.on('connection', (socket) => {
 
     // Asker submits a question
     socket.on('submitQuestion', (question) => {
-        socket.broadcast.emit('newQuestion', question);
+        io.emit('newQuestion', question); // Broadcast the question to all players
     });
 
-    // Other players respond with their name and response
-    socket.on('submitResponse', ({ response, playerName }) => {
-        socket.broadcast.to(players[currentAskerIndex].id).emit('newResponse', { response, playerName });
+    // Other players respond anonymously
+    socket.on('submitResponse', (response) => {
+        io.emit('newResponse', response); // Broadcast the response without player name
     });
 
     // Asker awards points to a player
