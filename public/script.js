@@ -54,11 +54,11 @@ submitQuestionBtn.addEventListener('click', () => {
     }
 });
 
-// Submit a response
+// Submit a response anonymously
 submitResponseBtn.addEventListener('click', () => {
     const response = playerResponseInput.value;
     if (response) {
-        socket.emit('submitResponse', { response, playerName: playerNameInput.value });
+        socket.emit('submitResponse', response);
         playerResponseInput.value = '';
     }
 });
@@ -68,25 +68,26 @@ socket.on('newAsker', (asker) => {
     updateAsker(asker);
 });
 
-// Display a new question
+// Display the question
 socket.on('newQuestion', (question) => {
     currentAsker.innerText = `Asker's Question: ${question}`;
 });
 
-// Display responses with player names and award points button
-socket.on('newResponse', ({ response, playerName }) => {
+// Display anonymous responses
+socket.on('newResponse', (response) => {
     const responseElement = document.createElement('li');
     responseElement.innerHTML = `
-        <strong>${playerName}:</strong> ${response}
-        <button onclick="awardPoint('${playerName}')">Award Point</button>
+        <strong>Response:</strong> ${response}
+        ${isAsker ? `<button onclick="awardPoint('${response}')">Select Best</button>` : ''}
     `;
     responsesList.appendChild(responseElement);
 });
 
 // Award points
-function awardPoint(playerName) {
+function awardPoint(response) {
     if (isAsker) {
-        socket.emit('awardPoints', playerName);
+        // Emit an event to award points (server will handle point assignment and turn rotation)
+        socket.emit('awardPoints', response);
         responsesList.innerHTML = ''; // Clear responses after awarding
     }
 }
