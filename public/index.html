@@ -7,26 +7,45 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Join Room Section -->
     <div id="joinRoom">
+        <h1>Join the Game</h1>
         <input type="text" id="playerName" placeholder="Enter your name">
         <button id="joinBtn">Join Room</button>
+        <h3>Players in Room:</h3>
         <ul id="playersList"></ul>
         <button id="startGameBtn" disabled>Start Game</button>
+        <button id="resetBtnJoin">Reset Game</button>
     </div>
 
+    <!-- Game Room Section -->
     <div id="gameRoom" style="display: none;">
-        <h2 id="currentAsker"></h2>
+        <h1>Git Game</h1>
+        <h2 id="currentAsker">Asker: </h2>
+        
+        <!-- Question Section -->
         <div id="questionSection">
+            <h3>Ask a Question:</h3>
             <input type="text" id="askerQuestion" placeholder="Type your question">
             <button id="submitQuestionBtn">Submit Question</button>
         </div>
+        
+        <!-- Response Section -->
         <div id="responseSection">
+            <h3>Submit Your Response:</h3>
             <input type="text" id="playerResponse" placeholder="Type your response">
             <button id="submitResponseBtn">Submit Response</button>
         </div>
+        
+        <!-- Responses List -->
+        <h3>Responses:</h3>
         <ul id="responsesList"></ul>
+        
+        <!-- Reset Button -->
+        <button id="resetBtnGame">Reset Game</button>
     </div>
 
+    <!-- Scores Section -->
     <div id="scoresSection" style="display: none;">
         <h3>Players and Scores</h3>
         <ul id="scoresList"></ul>
