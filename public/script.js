@@ -18,7 +18,11 @@ const submitResponseBtn = document.getElementById('submitResponseBtn');
 const responsesList = document.getElementById('responsesList');
 const scoresList = document.getElementById('scoresList');
 
+let timerElement; // Timer display
+let responseTimerDuration = 120; // Timer duration in seconds (2 minutes)
+let timerInterval; // Timer interval
 let isAsker = false;
+let hasResponded = false; // Track if the player has already responded
 
 // Player joins the room
 joinBtn.addEventListener('click', () => {
@@ -55,6 +59,7 @@ socket.on('resetGame', () => {
     responsesList.innerHTML = '';
     playerNameInput.disabled = false;
     joinBtn.disabled = false;
+    hasResponded = false;
 });
 
 // Update players list
@@ -78,15 +83,20 @@ submitQuestionBtn.addEventListener('click', () => {
         socket.emit('submitQuestion', question);
         askerQuestionInput.value = '';
         responsesList.innerHTML = ''; // Clear previous responses
+        startResponseTimer(); // Start the 2-minute response timer
     }
 });
 
-// Submit a response anonymously
+// Submit a response (only once)
 submitResponseBtn.addEventListener('click', () => {
-    const response = playerResponseInput.value;
-    if (response) {
-        socket.emit('submitResponse', response);
-        playerResponseInput.value = '';
+    if (!hasResponded) {
+        const response = playerResponseInput.value;
+        if (response) {
+            socket.emit('submitResponse', response);
+            playerResponseInput.value = '';
+            hasResponded = true; // Mark as responded
+            submitResponseBtn.disabled = true; // Disable further responses
+        }
     }
 });
 
@@ -98,6 +108,18 @@ socket.on('newAsker', (asker) => {
 // Display the question
 socket.on('newQuestion', (question) => {
     currentAsker.innerText = `Asker's Question: ${question}`;
+    hasResponded = false; // Reset response tracking
+    submitResponseBtn.disabled = false; // Enable response submission
+});
+
+// Notify players when the response time is over
+socket.on('responseTimeOver', () => {
+    submitResponseBtn.disabled = true; // Disable further responses
+    if (timerElement) {
+        timerElement.remove();
+        timerElement = null;
+    }
+    clearInterval(timerInterval);
 });
 
 // Display anonymous responses
@@ -128,8 +150,36 @@ socket.on('updateScores', (scores) => {
 function updateAsker(asker) {
     currentAsker.innerText = `Current Asker: ${asker.name}`;
     isAsker = asker.name === playerNameInput.value;
-    askerQuestionInput.disabled = !isAsker;
-    submitQuestionBtn.disabled = !isAsker;
-    playerResponseInput.disabled = isAsker;
-    submitResponseBtn.disabled = isAsker;
+    toggleInputFields(!isAsker);
+}
+
+// Start the response timer
+function startResponseTimer() {
+    let remainingTime = responseTimerDuration;
+    if (!timerElement) {
+        timerElement = document.createElement('h3');
+        timerElement.id = 'responseTimer';
+        gameRoomDiv.appendChild(timerElement);
+    }
+
+    timerElement.innerText = `Time left to respond: ${remainingTime} seconds`;
+
+    timerInterval = setInterval(() => {
+        remainingTime -= 1;
+        timerElement.innerText = `Time left to respond: ${remainingTime} seconds`;
+
+        if (remainingTime <= 0) {
+            clearInterval(timerInterval);
+            timerElement.innerText = 'Response time is over!';
+            submitResponseBtn.disabled = true; // Disable responses
+        }
+    }, 1000);
+}
+
+// Toggle input fields (disable/enable)
+function toggleInputFields(disable) {
+    askerQuestionInput.disabled = disable;
+    submitQuestionBtn.disabled = disable;
+    playerResponseInput.disabled = disable;
+    submitResponseBtn.disabled = disable;
 }
