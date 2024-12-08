@@ -7,6 +7,8 @@ const playerNameInput = document.getElementById('playerName');
 const joinBtn = document.getElementById('joinBtn');
 const playersList = document.getElementById('playersList');
 const startGameBtn = document.getElementById('startGameBtn');
+const resetBtnJoin = document.getElementById('resetBtnJoin');
+const resetBtnGame = document.getElementById('resetBtnGame');
 
 const currentAsker = document.getElementById('currentAsker');
 const askerQuestionInput = document.getElementById('askerQuestion');
@@ -28,9 +30,31 @@ joinBtn.addEventListener('click', () => {
     }
 });
 
+// Reset the game (from join page)
+resetBtnJoin.addEventListener('click', () => {
+    socket.emit('resetGame');
+});
+
+// Reset the game (from game page)
+resetBtnGame.addEventListener('click', () => {
+    socket.emit('resetGame');
+});
+
 // Start the game
 startGameBtn.addEventListener('click', () => {
     socket.emit('startGame');
+});
+
+// Reset the game on all clients
+socket.on('resetGame', () => {
+    joinRoomDiv.style.display = 'block';
+    gameRoomDiv.style.display = 'none';
+    scoresSection.style.display = 'none';
+    playersList.innerHTML = '';
+    scoresList.innerHTML = '';
+    responsesList.innerHTML = '';
+    playerNameInput.disabled = false;
+    joinBtn.disabled = false;
 });
 
 // Update players list
