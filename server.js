@@ -13,6 +13,7 @@ let responses = [];
 let currentAskerIndex = 0;
 let gameStarted = false;
 let responseSubmittedBy = new Set(); // Tracks players who have submitted responses
+let currentQuestionerId = null; // Tracks the current questioner's socket ID
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -43,18 +44,26 @@ io.on('connection', (socket) => {
 
     // Asker submits a question
     socket.on('submitQuestion', (question) => {
-        responses = [];
-        responseSubmittedBy.clear(); // Clear responders for the new question
-        io.emit('newQuestion', question); // Broadcast question to all players
-        setTimeout(() => {
-            io.emit('responseTimeOver'); // Notify players when the response time is over
-        }, 120000); // 2-minute timer in milliseconds
+        if (currentQuestionerId === null) {
+            responses = [];
+            responseSubmittedBy.clear(); // Clear responders for the new question
+            currentQuestionerId = socket.id; // Track the questioner's ID
+            io.emit('newQuestion', question); // Broadcast question to all players
+
+            setTimeout(() => {
+                io.emit('responseTimeOver'); // Notify players when the response time is over
+            }, 120000); // 2-minute timer in milliseconds
+        }
     });
 
-    // Other players respond (track which player submitted each response)
+    // Other players respond
     socket.on('submitResponse', (response) => {
         const player = players.find((player) => player.id === socket.id);
-        if (player && !responseSubmittedBy.has(player.name)) {
+        if (
+            player &&
+            !responseSubmittedBy.has(player.name) && // Check if the player has not already responded
+            socket.id !== currentQuestionerId // Ensure the questioner cannot respond
+        ) {
             responses.push({ response, playerName: player.name });
             responseSubmittedBy.add(player.name); // Mark the player as having responded
             io.emit('newResponse', response); // Broadcast response anonymously
@@ -79,6 +88,7 @@ io.on('connection', (socket) => {
         currentAskerIndex = 0;
         gameStarted = false;
         responseSubmittedBy.clear();
+        currentQuestionerId = null;
 
         io.emit('resetGame'); // Notify all clients to reset
     });
@@ -93,6 +103,7 @@ io.on('connection', (socket) => {
 // Rotate the asker turn
 function nextTurn() {
     currentAskerIndex = (currentAskerIndex + 1) % players.length;
+    currentQuestionerId = null; // Reset the current questioner
     io.emit('newAsker', players[currentAskerIndex]);
 }
 
