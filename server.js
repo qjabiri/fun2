@@ -22,16 +22,28 @@ io.on('connection', (socket) => {
 
     // Player joins the room
     socket.on('joinRoom', (name) => {
-        const player = { id: socket.id, name };
-        players.push(player);
-        scores[name] = 0;
+        let player = players.find((p) => p.name === name);
+
+        if (!player) {
+            // New player joins
+            player = { id: socket.id, name };
+            players.push(player);
+            scores[name] = 0;
+        } else {
+            // Existing player reconnects
+            player.id = socket.id; // Update the socket ID
+        }
+
+        socket.emit('syncGame', {
+            players,
+            scores,
+            gameStarted,
+            asker: players[currentAskerIndex],
+            responses,
+        });
 
         io.emit('updatePlayers', players);
         io.emit('updateScores', scores);
-
-        if (gameStarted) {
-            socket.emit('gameStarted', { players, asker: players[currentAskerIndex] });
-        }
     });
 
     // Start the game
@@ -95,7 +107,10 @@ io.on('connection', (socket) => {
 
     // Handle player disconnection
     socket.on('disconnect', () => {
-        players = players.filter((player) => player.id !== socket.id);
+        const player = players.find((p) => p.id === socket.id);
+        if (player) {
+            player.id = null; // Mark player as disconnected (allow reconnect)
+        }
         io.emit('updatePlayers', players);
     });
 });
@@ -106,7 +121,6 @@ function nextTurn() {
     currentQuestionerId = null; // Reset the current questioner
     io.emit('newAsker', players[currentAskerIndex]);
 }
-
 server.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
