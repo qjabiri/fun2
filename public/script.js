@@ -76,20 +76,21 @@ socket.on('gameStarted', ({ players, asker }) => {
     updateAsker(asker);
 });
 
-// Submit a question
+// Submit a question (only once per turn)
 submitQuestionBtn.addEventListener('click', () => {
     const question = askerQuestionInput.value;
     if (question) {
         socket.emit('submitQuestion', question);
         askerQuestionInput.value = '';
+        submitQuestionBtn.disabled = true; // Disable question submission
         responsesList.innerHTML = ''; // Clear previous responses
         startResponseTimer(); // Start the 2-minute response timer
     }
 });
 
-// Submit a response (only once)
+// Submit a response (only once per question)
 submitResponseBtn.addEventListener('click', () => {
-    if (!hasResponded) {
+    if (!hasResponded && !isAsker) {
         const response = playerResponseInput.value;
         if (response) {
             socket.emit('submitResponse', response);
@@ -103,6 +104,8 @@ submitResponseBtn.addEventListener('click', () => {
 // Show the current Asker
 socket.on('newAsker', (asker) => {
     updateAsker(asker);
+    submitQuestionBtn.disabled = false; // Re-enable question submission for the next questioner
+    hasResponded = false; // Reset response tracking for all players
 });
 
 // Display the question
