@@ -118,16 +118,19 @@ socket.on('newAsker', (asker) => {
     hasResponded = false; // Reset response tracking for all players
 });
 
-// Display the question
+// Display the question and reset timer
 socket.on('newQuestion', (question) => {
     currentAsker.innerText = `Asker's Question: ${question}`;
     hasResponded = false; // Reset response tracking
     submitResponseBtn.disabled = false; // Enable response submission for responders
+    playerResponseInput.disabled = false; // Ensure responders can type
+    startResponseTimer(); // Restart the countdown timer
 });
 
 // Notify players when the response time is over
 socket.on('responseTimeOver', () => {
     submitResponseBtn.disabled = true; // Disable further responses
+    playerResponseInput.disabled = true; // Prevent typing after timer ends
     if (timerElement) {
         timerElement.remove();
         timerElement = null;
@@ -185,6 +188,7 @@ function startResponseTimer() {
             clearInterval(timerInterval);
             timerElement.innerText = 'Response time is over!';
             submitResponseBtn.disabled = true; // Disable responses
+            playerResponseInput.disabled = true; // Prevent typing
         }
     }, 1000);
 }
