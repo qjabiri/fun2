@@ -80,6 +80,12 @@ io.on('connection', (socket) => {
         nextTurn();
     });
 
+    // Forcefully skip to the next questioner
+    socket.on('forceNext', () => {
+        console.log('Force Next Questioner triggered');
+        nextTurn();
+    });
+
     // Reset the game
     socket.on('resetGame', () => {
         players = [];
