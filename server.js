@@ -9,7 +9,7 @@ const io = new Server(server);
 
 let players = [];
 let scores = {};
-let responses = []; // Store responses and the players who submitted them
+let responses = [];
 let currentAskerIndex = 0;
 let gameStarted = false;
 
@@ -18,18 +18,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
-    // Player joins the room
+    // Player joins the room (hot join support)
     socket.on('joinRoom', (name) => {
-        if (!gameStarted) {
-            players.push({ id: socket.id, name });
-            scores[name] = 0;
-            io.emit('updatePlayers', players);
+        const player = { id: socket.id, name };
+        players.push(player);
+        scores[name] = 0;
+
+        io.emit('updatePlayers', players);
+        io.emit('updateScores', scores);
+
+        if (gameStarted) {
+            socket.emit('gameStarted', { players, asker: players[currentAskerIndex] });
         }
     });
 
     // Start the game
     socket.on('startGame', () => {
-        if (players.length >= 2 && !gameStarted) {
+        if (players.length >= 2) {
             gameStarted = true;
             io.emit('gameStarted', { players, asker: players[currentAskerIndex] });
         }
@@ -37,7 +42,7 @@ io.on('connection', (socket) => {
 
     // Asker submits a question
     socket.on('submitQuestion', (question) => {
-        responses = []; // Clear previous responses for the new question
+        responses = [];
         io.emit('newQuestion', question); // Broadcast question to all players
     });
 
@@ -58,6 +63,17 @@ io.on('connection', (socket) => {
             io.emit('updateScores', scores);
         }
         nextTurn();
+    });
+
+    // Reset the game
+    socket.on('resetGame', () => {
+        players = [];
+        scores = {};
+        responses = [];
+        currentAskerIndex = 0;
+        gameStarted = false;
+
+        io.emit('resetGame'); // Notify all clients to reset
     });
 
     // Handle player disconnection
