@@ -9,6 +9,7 @@ const playersList = document.getElementById('playersList');
 const startGameBtn = document.getElementById('startGameBtn');
 const resetBtnJoin = document.getElementById('resetBtnJoin');
 const resetBtnGame = document.getElementById('resetBtnGame');
+const forceNextBtn = document.getElementById('forceNextBtn'); // Force Next Questioner Button
 
 const currentAsker = document.getElementById('currentAsker');
 const askerQuestionInput = document.getElementById('askerQuestion');
@@ -44,6 +45,12 @@ resetBtnGame.addEventListener('click', () => {
     socket.emit('resetGame');
 });
 
+// Force Next Questioner
+forceNextBtn.addEventListener('click', () => {
+    console.log('Force Next button clicked'); // Debug log
+    socket.emit('forceNext');
+});
+
 // Start the game
 startGameBtn.addEventListener('click', () => {
     socket.emit('startGame');
@@ -60,6 +67,7 @@ socket.on('resetGame', () => {
     playerNameInput.disabled = false;
     joinBtn.disabled = false;
     hasResponded = false;
+    submitResponseBtn.disabled = false; // Enable the response button for responders
 });
 
 // Update players list
@@ -91,12 +99,14 @@ submitQuestionBtn.addEventListener('click', () => {
 // Submit a response (only once per question)
 submitResponseBtn.addEventListener('click', () => {
     if (!hasResponded && !isAsker) {
-        const response = playerResponseInput.value;
+        const response = playerResponseInput.value.trim(); // Ensure response is non-empty
         if (response) {
-            socket.emit('submitResponse', response);
-            playerResponseInput.value = '';
+            socket.emit('submitResponse', response); // Send the response to the server
+            playerResponseInput.value = ''; // Clear the input field
             hasResponded = true; // Mark as responded
             submitResponseBtn.disabled = true; // Disable further responses for this player
+        } else {
+            alert('Response cannot be empty.'); // Notify if the response is empty
         }
     }
 });
@@ -104,7 +114,7 @@ submitResponseBtn.addEventListener('click', () => {
 // Show the current Asker
 socket.on('newAsker', (asker) => {
     updateAsker(asker);
-    submitQuestionBtn.disabled = false; // Re-enable question submission for the next questioner
+    submitResponseBtn.disabled = false; // Enable the response button for responders
     hasResponded = false; // Reset response tracking for all players
 });
 
@@ -112,7 +122,7 @@ socket.on('newAsker', (asker) => {
 socket.on('newQuestion', (question) => {
     currentAsker.innerText = `Asker's Question: ${question}`;
     hasResponded = false; // Reset response tracking
-    submitResponseBtn.disabled = false; // Enable response submission
+    submitResponseBtn.disabled = false; // Enable response submission for responders
 });
 
 // Notify players when the response time is over
