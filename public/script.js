@@ -96,7 +96,7 @@ submitResponseBtn.addEventListener('click', () => {
             socket.emit('submitResponse', response);
             playerResponseInput.value = '';
             hasResponded = true; // Mark as responded
-            submitResponseBtn.disabled = true; // Disable further responses
+            submitResponseBtn.disabled = true; // Disable further responses for this player
         }
     }
 });
