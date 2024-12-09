@@ -1,0 +1,94 @@
+Fun Game on Render
+A fun, interactive web-based game where players take turns asking questions, submitting responses, and awarding points for the best answers. This turn-based game supports real-time interactions and is hosted live at https://fun2.onrender.com/.
+
+Features
+Real-Time Gameplay: Players join a game room and interact in real-time.
+Turn-Based Questions: Each player takes turns being the "Asker" to submit a question.
+Anonymous Responses: Players submit responses anonymously, and the asker selects the best one.
+Score Tracking: Points are awarded for the best responses, and scores are updated dynamically.
+Force Skip: A button allows anyone to skip to the next turn if needed.
+Reset Game: The game can be reset to start fresh for all players.
+Hosted Online: Accessible via https://fun2.onrender.com/.
+Technologies Used
+Frontend:
+HTML
+CSS
+JavaScript
+Socket.IO (for real-time communication)
+Backend:
+Node.js
+Express.js
+Socket.IO
+Hosting:
+Render
+How to Play
+Join the Game:
+
+Navigate to https://fun2.onrender.com/.
+Enter your name in the input box and click "Join Room."
+Wait for other players to join.
+Start the Game:
+
+Once at least two players are in the room, the "Start Game" button becomes active.
+Click "Start Game" to begin.
+Gameplay:
+
+Players take turns being the "Asker."
+The asker submits a question, which is displayed to all players.
+Other players (responders) type their answers in the response input box and click "Submit Response."
+Award Points:
+
+The asker selects the best response, and the corresponding player earns a point.
+Scores are displayed and updated in real-time.
+Force Next Questioner:
+
+If needed, anyone can click the "Force Next" button to skip to the next questioner.
+Reset Game:
+
+To restart the game, click "Reset Game."
+Development Setup
+If you want to run the project locally:
+
+Prerequisites:
+Node.js (v14 or later)
+NPM (Node Package Manager)
+Steps:
+Clone the Repository:
+
+bash
+Copy code
+git clone <repository-url>
+cd <repository-folder>
+Install Dependencies:
+
+bash
+Copy code
+npm install
+Start the Server:
+
+bash
+Copy code
+node server.js
+Access the Game:
+
+Open your browser and navigate to http://localhost:3000.
+Project Structure
+php
+Copy code
+.
+├── public/
+│   ├── index.html       # Main HTML file
+│   ├── style.css        # Stylesheet
+│   ├── script.js        # Client-side JavaScript
+├── server.js            # Backend server with Socket.IO logic
+├── package.json         # Node.js dependencies and scripts
+└── README.md            # Project documentation
+Future Improvements
+Add a timer to limit the time for asking questions or submitting responses (if needed).
+Support for custom game settings, like time limits or point thresholds.
+Mobile-friendly responsive design.
+Add sounds or animations for fun feedback.
+Contributors
+Qudsi Aljabiri
+License
+This project is licensed under the MIT License. See the LICENSE file for details.
