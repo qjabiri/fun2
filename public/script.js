@@ -65,6 +65,7 @@ socket.on('resetGame', () => {
     joinBtn.disabled = false;
     hasResponded = false;
     submitResponseBtn.disabled = false; // Enable the response button for responders
+    playerResponseInput.disabled = false; // Enable the response input box
 });
 
 // Update players list
@@ -101,6 +102,7 @@ submitResponseBtn.addEventListener('click', () => {
             playerResponseInput.value = ''; // Clear the input field
             hasResponded = true; // Mark as responded
             submitResponseBtn.disabled = true; // Disable further responses for this player
+            playerResponseInput.disabled = true; // Disable the input box for this player
         } else {
             alert('Response cannot be empty.'); // Notify if the response is empty
         }
@@ -111,6 +113,7 @@ submitResponseBtn.addEventListener('click', () => {
 socket.on('newAsker', (asker) => {
     updateAsker(asker);
     submitResponseBtn.disabled = false; // Enable the response button for responders
+    playerResponseInput.disabled = false; // Enable the response input box
     hasResponded = false; // Reset response tracking for all players
 });
 
@@ -119,6 +122,7 @@ socket.on('newQuestion', (question) => {
     currentAsker.innerText = `Asker's Question: ${question}`;
     hasResponded = false; // Reset response tracking
     submitResponseBtn.disabled = false; // Enable response submission for responders
+    playerResponseInput.disabled = false; // Ensure responders can type
 });
 
 // Display anonymous responses
@@ -156,6 +160,6 @@ function updateAsker(asker) {
 function toggleInputFields(disable) {
     askerQuestionInput.disabled = disable;
     submitQuestionBtn.disabled = disable;
-    playerResponseInput.disabled = disable;
+    playerResponseInput.disabled = disable && isAsker; // Disable only for the asker
     submitResponseBtn.disabled = disable;
 }
