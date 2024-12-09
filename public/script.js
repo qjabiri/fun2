@@ -19,9 +19,6 @@ const submitResponseBtn = document.getElementById('submitResponseBtn');
 const responsesList = document.getElementById('responsesList');
 const scoresList = document.getElementById('scoresList');
 
-let timerElement; // Timer display
-let responseTimerDuration = 120; // Timer duration in seconds (2 minutes)
-let timerInterval; // Timer interval
 let isAsker = false;
 let hasResponded = false; // Track if the player has already responded
 
@@ -92,7 +89,6 @@ submitQuestionBtn.addEventListener('click', () => {
         askerQuestionInput.value = '';
         submitQuestionBtn.disabled = true; // Disable question submission
         responsesList.innerHTML = ''; // Clear previous responses
-        startResponseTimer(); // Start the 2-minute response timer
     }
 });
 
@@ -118,24 +114,11 @@ socket.on('newAsker', (asker) => {
     hasResponded = false; // Reset response tracking for all players
 });
 
-// Display the question and reset timer
+// Display the question
 socket.on('newQuestion', (question) => {
     currentAsker.innerText = `Asker's Question: ${question}`;
     hasResponded = false; // Reset response tracking
     submitResponseBtn.disabled = false; // Enable response submission for responders
-    playerResponseInput.disabled = false; // Ensure responders can type
-    startResponseTimer(); // Restart the countdown timer
-});
-
-// Notify players when the response time is over
-socket.on('responseTimeOver', () => {
-    submitResponseBtn.disabled = true; // Disable further responses
-    playerResponseInput.disabled = true; // Prevent typing after timer ends
-    if (timerElement) {
-        timerElement.remove();
-        timerElement = null;
-    }
-    clearInterval(timerInterval);
 });
 
 // Display anonymous responses
@@ -167,30 +150,6 @@ function updateAsker(asker) {
     currentAsker.innerText = `Current Asker: ${asker.name}`;
     isAsker = asker.name === playerNameInput.value;
     toggleInputFields(!isAsker);
-}
-
-// Start the response timer
-function startResponseTimer() {
-    let remainingTime = responseTimerDuration;
-    if (!timerElement) {
-        timerElement = document.createElement('h3');
-        timerElement.id = 'responseTimer';
-        gameRoomDiv.appendChild(timerElement);
-    }
-
-    timerElement.innerText = `Time left to respond: ${remainingTime} seconds`;
-
-    timerInterval = setInterval(() => {
-        remainingTime -= 1;
-        timerElement.innerText = `Time left to respond: ${remainingTime} seconds`;
-
-        if (remainingTime <= 0) {
-            clearInterval(timerInterval);
-            timerElement.innerText = 'Response time is over!';
-            submitResponseBtn.disabled = true; // Disable responses
-            playerResponseInput.disabled = true; // Prevent typing
-        }
-    }, 1000);
 }
 
 // Toggle input fields (disable/enable)
