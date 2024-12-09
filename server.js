@@ -49,10 +49,6 @@ io.on('connection', (socket) => {
             responseSubmittedBy.clear(); // Clear responders for the new question
             currentQuestionerId = socket.id; // Track the questioner's ID
             io.emit('newQuestion', question); // Broadcast question to all players
-
-            setTimeout(() => {
-                io.emit('responseTimeOver'); // Notify players when the response time is over
-            }, 120000); // 2-minute timer in milliseconds
         }
     });
 
