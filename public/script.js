@@ -1,165 +1,133 @@
-const socket = io();
+const $ = (id) => document.getElementById(id);
+const show = (el, on=true) => el.classList[on ? 'remove' : 'add']('hidden');
 
-const joinRoomDiv = document.getElementById('joinRoom');
-const gameRoomDiv = document.getElementById('gameRoom');
-const scoresSection = document.getElementById('scoresSection');
-const playerNameInput = document.getElementById('playerName');
-const joinBtn = document.getElementById('joinBtn');
-const playersList = document.getElementById('playersList');
-const startGameBtn = document.getElementById('startGameBtn');
-const resetBtnJoin = document.getElementById('resetBtnJoin');
-const resetBtnGame = document.getElementById('resetBtnGame');
-const forceNextBtn = document.getElementById('forceNextBtn'); // Force Next Questioner Button
+const auth = { section: $('auth'), email: $('email'), name: $('displayName'), sendLink: $('sendLink'), msg: $('authMsg') };
+const dash = { section: $('dash'), logout: $('logout'), gameName: $('gameName'), create: $('createGame'), myGames: $('myGames'), code: $('joinCode'), goJoin: $('goJoin') };
+const room = { section: $('room'), title: $('roomTitle'), leave: $('leaveRoom'), roster: $('roster'), start: $('startGame'), inviteBox: $('inviteBox'), inviteEmails: $('inviteEmails'), sendInvites: $('sendInvites'), asker: $('asker'), question: $('question'), submitQ: $('submitQuestion'), response: $('response'), submitR: $('submitResponse'), responses: $('responses'), forceNext: $('forceNext') };
 
-const currentAsker = document.getElementById('currentAsker');
-const askerQuestionInput = document.getElementById('askerQuestion');
-const submitQuestionBtn = document.getElementById('submitQuestionBtn');
-const playerResponseInput = document.getElementById('playerResponse');
-const submitResponseBtn = document.getElementById('submitResponseBtn');
-const responsesList = document.getElementById('responsesList');
-const scoresList = document.getElementById('scoresList');
+let me, socket, currentCode, myRole;
 
-let isAsker = false;
-let hasResponded = false; // Track if the player has already responded
+async function api(path, opts={}) {
+  const res = await fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
+  if (!res.ok) throw new Error(await res.text());
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json') ? res.json() : res.text();
+}
 
-// Player joins the room
-joinBtn.addEventListener('click', () => {
-    const name = playerNameInput.value;
-    if (name) {
-        socket.emit('joinRoom', name);
-        playerNameInput.disabled = true;
-        joinBtn.disabled = true;
-    }
-});
+async function refreshMe() {
+  try {
+    const { user, games } = await api('/me');
+    me = user; renderDash(games);
+  } catch {
+    show(auth.section, true); show(dash.section, false); show(room.section, false);
+  }
+}
 
-// Reset the game (from join page)
-resetBtnJoin.addEventListener('click', () => {
-    socket.emit('resetGame');
-});
+function renderDash(games=[]) {
+  show(auth.section, false); show(dash.section, true); show(room.section, false);
+  dash.myGames.innerHTML = '';
+  for (const g of games) {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `<b>${g.name}</b> <code>${g.code}</code> <span class="tag">${g.role}</span>
+      <button data-code="${g.code}" class="go">Open</button>`;
+    dash.myGames.appendChild(div);
+  }
+  dash.myGames.addEventListener('click', (e) => {
+    if (e.target.classList.contains('go')) enterRoom(e.target.dataset.code);
+  }, { once: true });
+}
 
-// Reset the game (from game page)
-resetBtnGame.addEventListener('click', () => {
-    socket.emit('resetGame');
-});
+// Auth
+auth.sendLink.onclick = async () => {
+  auth.msg.textContent = 'Sending…';
+  try {
+    await api('/auth/magic-link', { method: 'POST', body: JSON.stringify({ email: auth.email.value, name: auth.name.value }) });
+    auth.msg.textContent = 'Check your email for the sign‑in link.';
+  } catch (e) { auth.msg.textContent = 'Could not send link.'; }
+};
 
-// Force Next Questioner
-forceNextBtn.addEventListener('click', () => {
-    console.log('Force Next button clicked'); // Debug log
-    socket.emit('forceNext');
-});
+dash.logout.onclick = async () => { await api('/auth/logout', { method: 'POST' }); location.reload(); };
 
-// Start the game
-startGameBtn.addEventListener('click', () => {
-    socket.emit('startGame');
-});
+dash.create.onclick = async () => {
+  const { code } = await api('/games', { method: 'POST', body: JSON.stringify({ name: dash.gameName.value }) });
+  enterRoom(code);
+};
 
-// Reset the game on all clients
-socket.on('resetGame', () => {
-    joinRoomDiv.style.display = 'block';
-    gameRoomDiv.style.display = 'none';
-    scoresSection.style.display = 'none';
-    playersList.innerHTML = '';
-    scoresList.innerHTML = '';
-    responsesList.innerHTML = '';
-    playerNameInput.disabled = false;
-    joinBtn.disabled = false;
-    hasResponded = false;
-    submitResponseBtn.disabled = false; // Enable the response button for responders
-    playerResponseInput.disabled = false; // Enable the response input box
-});
+dash.goJoin.onclick = async () => { enterRoom(dash.code.value.trim().toUpperCase()); };
 
-// Update players list
-socket.on('updatePlayers', (players) => {
-    playersList.innerHTML = players.map((player) => `<li>${player.name}</li>`).join('');
-    startGameBtn.disabled = players.length < 2;
-});
+room.leave.onclick = () => { currentCode = null; refreshMe(); };
 
-// Game started
-socket.on('gameStarted', ({ players, asker }) => {
-    joinRoomDiv.style.display = 'none';
-    gameRoomDiv.style.display = 'block';
-    scoresSection.style.display = 'block'; // Show the scores section
+async function enterRoom(code) {
+  currentCode = code; myRole = null;
+  try {
+    // honor invite token in URL if present
+    const url = new URL(location.href);
+    const inv = url.searchParams.get('inv');
+    await api(`/games/${code}/join${inv ? `?inv=${encodeURIComponent(inv)}` : ''}`, { method: 'POST' });
+  } catch {}
+  show(dash.section, false); show(room.section, true);
+  room.title.textContent = `Room • ${code}`;
+
+  if (!socket) socket = io({ withCredentials: true });
+  socket.emit('joinGame', { code });
+
+  socket.on('errorMsg', (m) => alert(m));
+  socket.on('gameMeta', ({ name, role, asker }) => {
+    myRole = role; room.title.textContent = `${name} • ${code}`;
+    show(room.start, role === 'owner');
+    show(room.inviteBox, role === 'owner');
     updateAsker(asker);
-});
+  });
 
-// Submit a question (only once per turn)
-submitQuestionBtn.addEventListener('click', () => {
-    const question = askerQuestionInput.value;
-    if (question) {
-        socket.emit('submitQuestion', question);
-        askerQuestionInput.value = '';
-        submitQuestionBtn.disabled = true; // Disable question submission
-        responsesList.innerHTML = ''; // Clear previous responses
-    }
-});
+  socket.on('roster', (list) => {
+    room.roster.innerHTML = list.map(p => `<li>${p.name} — <b>${p.score}</b> ${p.connected ? '' : '<span class="muted">(left)</span>'}</li>`).join('');
+  });
 
-// Submit a response (only once per question)
-submitResponseBtn.addEventListener('click', () => {
-    if (!hasResponded && !isAsker) {
-        const response = playerResponseInput.value.trim(); // Ensure response is non-empty
-        if (response) {
-            socket.emit('submitResponse', response); // Send the response to the server
-            playerResponseInput.value = ''; // Clear the input field
-            hasResponded = true; // Mark as responded
-            submitResponseBtn.disabled = true; // Disable further responses for this player
-            playerResponseInput.disabled = true; // Disable the input box for this player
-        } else {
-            alert('Response cannot be empty.'); // Notify if the response is empty
-        }
-    }
-});
+  socket.on('gameStarted', ({ asker }) => updateAsker(asker));
 
-// Show the current Asker
-socket.on('newAsker', (asker) => {
-    updateAsker(asker);
-    submitResponseBtn.disabled = false; // Enable the response button for responders
-    playerResponseInput.disabled = false; // Enable the response input box
-    hasResponded = false; // Reset response tracking for all players
-});
+  socket.on('newQuestion', (q) => { room.asker.textContent = `Asker's Question: ${q}`; room.responses.innerHTML=''; });
 
-// Display the question
-socket.on('newQuestion', (question) => {
-    currentAsker.innerText = `Asker's Question: ${question}`;
-    hasResponded = false; // Reset response tracking
-    submitResponseBtn.disabled = false; // Enable response submission for responders
-    playerResponseInput.disabled = false; // Ensure responders can type
-});
+  socket.on('newResponse', ({ id, text }) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${text}</span>` + (isAsker() ? ` <button data-id="${id}" class="pick">Pick</button>` : '');
+    room.responses.appendChild(li);
+  });
 
-// Display anonymous responses
-socket.on('newResponse', (response) => {
-    const responseElement = document.createElement('li');
-    responseElement.innerHTML = `
-        <strong>Response:</strong> ${response}
-        ${isAsker ? `<button onclick="awardPoint('${response}')">Select Best</button>` : ''}
-    `;
-    responsesList.appendChild(responseElement);
-});
+  socket.on('scores', (scores) => {
+    // just refresh roster (scores are embedded there)
+  });
 
-// Award points
-function awardPoint(selectedResponse) {
-    if (isAsker) {
-        socket.emit('awardPoints', selectedResponse);
-        responsesList.innerHTML = ''; // Clear responses after awarding
-    }
+  socket.on('newAsker', (asker) => { updateAsker(asker); room.responses.innerHTML=''; room.response.value=''; });
+
+  room.start.onclick = () => socket.emit('startGame');
+  room.submitQ.onclick = () => socket.emit('submitQuestion', room.question.value);
+  room.submitR.onclick = () => socket.emit('submitResponse', room.response.value);
+  room.forceNext.onclick = () => socket.emit('forceNext');
+
+  room.responses.addEventListener('click', (e) => {
+    if (e.target.classList.contains('pick')) socket.emit('awardPoints', e.target.dataset.id);
+  });
+
+  function isAsker() { return room.asker.dataset.askerId === me?.uid; }
+  function updateAsker(a) {
+    room.asker.dataset.askerId = a?.id || '';
+    room.asker.textContent = `Current Asker: ${a ? a.name : '—'}`;
+    const amAsker = a && a.id === me?.uid;
+    room.question.disabled = !amAsker;
+    room.submitQ.disabled = !amAsker;
+    room.response.disabled = amAsker;
+    room.submitR.disabled = amAsker;
+  }
 }
 
-// Update scores
-socket.on('updateScores', (scores) => {
-    scoresList.innerHTML = Object.entries(scores)
-        .map(([name, score]) => `<li>${name}: ${score}</li>`).join('');
-});
+room.sendInvites.onclick = async () => {
+  const emails = room.inviteEmails.value.split(',').map(s => s.trim()).filter(Boolean);
+  if (!emails.length) return;
+  await api(`/games/${currentCode}/invite`, { method: 'POST', body: JSON.stringify({ emails }) });
+  room.inviteEmails.value='';
+  alert('Invites sent.');
+};
 
-// Update the Asker
-function updateAsker(asker) {
-    currentAsker.innerText = `Current Asker: ${asker.name}`;
-    isAsker = asker.name === playerNameInput.value;
-    toggleInputFields(!isAsker);
-}
-
-// Toggle input fields (disable/enable)
-function toggleInputFields(disable) {
-    askerQuestionInput.disabled = disable;
-    submitQuestionBtn.disabled = disable;
-    playerResponseInput.disabled = disable && isAsker; // Disable only for the asker
-    submitResponseBtn.disabled = disable;
-}
+// Auto‑boot
+refreshMe();
