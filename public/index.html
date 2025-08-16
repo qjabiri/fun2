@@ -1,64 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Git Game</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Git Game</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <!-- Join Room Section -->
-    <div id="joinRoom">
-        <h1>Join the Game</h1>
-        <input type="text" id="playerName" placeholder="Enter your name">
-        <button id="joinBtn">Join Room</button>
-        <h3>Players in Room:</h3>
-        <ul id="playersList"></ul>
-        <button id="startGameBtn" disabled>Start Game</button>
-        <button id="resetBtnJoin">Reset Game</button>
-    </div>
+  <div id="app">
+    <!-- Auth -->
+    <section id="auth" class="card">
+      <h1>Sign in</h1>
+      <p class="muted">No password needed — we’ll email you a link.</p>
+      <input id="email" type="email" placeholder="you@example.com">
+      <input id="displayName" type="text" placeholder="Display name (optional)">
+      <button id="sendLink">Send magic link</button>
+      <p id="authMsg" class="muted"></p>
+    </section>
 
-    <!-- Game Room Section -->
-    <div id="gameRoom" style="display: none;">
-        <!-- Force Next Questioner Button -->
-        <button id="forceNextBtn" style="position: absolute; top: 10px; right: 10px;">Force Next</button>
-        <h1>Git Game</h1>
-        <h2 id="currentAsker">Asker: </h2>
-        
-        <!-- Timer Section -->
-        <div id="timerSection">
-            <h3 id="responseTimer"></h3>
+    <!-- Dashboard -->
+    <section id="dash" class="card hidden">
+      <div class="row between">
+        <h2>Dashboard</h2>
+        <button id="logout" class="ghost">Log out</button>
+      </div>
+      <div class="row">
+        <input id="gameName" type="text" placeholder="Game name">
+        <button id="createGame">Create game</button>
+      </div>
+      <div id="myGames" class="list"></div>
+      <div class="row">
+        <input id="joinCode" type="text" placeholder="Join code">
+        <button id="goJoin">Join</button>
+      </div>
+    </section>
+
+    <!-- Room -->
+    <section id="room" class="card hidden">
+      <div class="row between">
+        <h2 id="roomTitle">Room</h2>
+        <button id="leaveRoom" class="ghost">Back</button>
+      </div>
+      <div class="grid">
+        <div>
+          <h3>Players</h3>
+          <ul id="roster"></ul>
+          <div id="inviteBox" class="hidden">
+            <input id="inviteEmails" type="text" placeholder="Invite emails, comma‑separated">
+            <button id="sendInvites">Send invites</button>
+          </div>
+          <button id="startGame" class="hidden">Start game</button>
         </div>
-
-        <!-- Question Section -->
-        <div id="questionSection">
-            <h3>Ask a Question:</h3>
-            <input type="text" id="askerQuestion" placeholder="Type your question">
-            <button id="submitQuestionBtn">Submit Question</button>
+        <div>
+          <h3 id="asker">Current Asker: —</h3>
+          <div id="questionPane">
+            <input id="question" type="text" placeholder="Type your question">
+            <button id="submitQuestion">Submit question</button>
+          </div>
+          <div id="responsePane">
+            <input id="response" type="text" placeholder="Your response">
+            <button id="submitResponse">Submit response</button>
+          </div>
+          <ul id="responses"></ul>
+          <button id="forceNext" class="ghost">Force next</button>
         </div>
-        
-        <!-- Response Section -->
-        <div id="responseSection">
-            <h3>Submit Your Response:</h3>
-            <input type="text" id="playerResponse" placeholder="Type your response">
-            <button id="submitResponseBtn">Submit Response</button>
-        </div>
-        
-        <!-- Responses List -->
-        <h3>Responses:</h3>
-        <ul id="responsesList"></ul>
-        
-        <!-- Reset Button -->
-        <button id="resetBtnGame">Reset Game</button>
-    </div>
-
-    <!-- Scores Section -->
-    <div id="scoresSection" style="display: none;">
-        <h3>Players and Scores</h3>
-        <ul id="scoresList"></ul>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
+      </div>
+    </section>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/script.js"></script>
 </body>
 </html>
